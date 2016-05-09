@@ -11,14 +11,18 @@ class MockTest extends PHPUnit_Framework_TestCase
         
         $user = $this->getMock('IUser');
         
-        $user->expects($this->once())
-            ->method('getFirstName');
-        $user->expects($this->once())
-            ->method('getLastName');
+        $user->expects($this->exactly(2))
+            ->method('getName')
+            ->withConsecutive(array(
+            $this->equalTo('first')
+        ), array(
+            $this->equalTo('last')
+        ))
+            ->will($this->onConsecutiveCalls('Fred', 'Bloggs'));
         
         $fixture->setUser($user);
         
-        $fixture->getUserName();
+        $this->assertSame('Fred Bloggs', $fixture->getUserName());
     }
 
     public function testDemonstrateProphecyMock()
@@ -27,11 +31,14 @@ class MockTest extends PHPUnit_Framework_TestCase
         
         $user = $this->prophesize('IUser');
         
-        $user->getFirstName()->shouldBeCalled();
-        $user->getLastName()->shouldBeCalled();
+        $user->getName('first')->willReturn('Fred');
+        $user->getName('last')->willReturn('Bloggs');
         
         $fixture->setUser($user->reveal());
         
-        $fixture->getUserName();
+        $this->assertSame('Fred Bloggs', $fixture->getUserName());
+        
+        $user->getName('first')->shouldHaveBeenCalledTimes(1);
+        $user->getName('last')->shouldHaveBeenCalledTimes(1);
     }
 }
